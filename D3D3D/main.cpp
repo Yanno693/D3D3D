@@ -1,16 +1,8 @@
 #include <Windows.h>
-#include <string>
-#include <sstream>
+#include "Window.h"
 
-LRESULT CALLBACK winloop(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK winloopp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
-	
-	//OutputDebugString((msg).c_str());
-	//LPWSTR str = L"ok";
-	//wsprintf(str, L"%d", msg);
-	//LPCWSTR str = L"lol";
-	//LPWSTR str = "lol";
-	//OutputDebugString(str);
 	wchar_t mstr[2];
 	mstr[1] = '\0';
 	
@@ -25,7 +17,6 @@ LRESULT CALLBACK winloop(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			OutputDebugString(L"\n");
 			break;
 		case WM_LBUTTONDOWN: {
-
 			POINTS pts = MAKEPOINTS(lParam);
 			int xPos = pts.x;
 			int yPos = pts.y;
@@ -36,9 +27,24 @@ LRESULT CALLBACK winloop(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			MultiByteToWideChar(CP_ACP, 0, ss.str().c_str(), -1, buf, 4096);
 
 			OutputDebugString(L"Mouse: ");
-			//OutputDebugString(mstr);
 			OutputDebugString(buf);
 			
+			delete[] buf;
+			break;
+		}
+		case WM_MOUSEMOVE: {
+			POINTS pts = MAKEPOINTS(lParam);
+			int xPos = pts.x;
+			int yPos = pts.y;
+			std::ostringstream ss;
+			ss << xPos << " " << yPos << std::endl;
+
+			wchar_t* buf = new wchar_t[4096];
+			MultiByteToWideChar(CP_ACP, 0, ss.str().c_str(), -1, buf, 4096);
+
+			OutputDebugString(L"Mouse: ");
+			OutputDebugString(buf);
+
 			delete[] buf;
 			break;
 		}
@@ -57,25 +63,25 @@ int CALLBACK WinMain(
 {
 	// 1. Register window
 
-	LPCWSTR className = L"D3D3D"; // ClassName
+	//LPCWSTR className = L"D3D3D"; // ClassName
 	
-	WNDCLASSEX wc = {0};
-	wc.cbSize = sizeof(wc);
-	wc.style = CS_OWNDC;
-	wc.lpfnWndProc = winloop; // Window event loop
-	wc.cbClsExtra = 0;
-	wc.cbWndExtra = 0;
-	wc.hInstance = hInstance;
-	wc.hIcon = nullptr;
-	wc.hIconSm = nullptr;
-	wc.hCursor = nullptr;
-	wc.hbrBackground = nullptr;
-	wc.lpszMenuName = nullptr;
-	wc.lpszClassName = className;
-	RegisterClassEx(&wc);
-	
+	//WNDCLASSEX wc = {0};
+	//wc.cbSize = sizeof(wc);
+	//wc.style = CS_OWNDC;
+	//wc.lpfnWndProc = winloop; // Window event loop
+	//wc.cbClsExtra = 0;
+	//wc.cbWndExtra = 0;
+	//wc.hInstance = hInstance;
+	//wc.hIcon = nullptr;
+	//wc.hIconSm = nullptr;
+	//wc.hCursor = nullptr;
+	//wc.hbrBackground = nullptr;
+	//wc.lpszMenuName = nullptr;
+	//wc.lpszClassName = className;
+	//RegisterClassEx(&wc);
+	//
 	// 2. Instantiate window
-	HWND hWnd = CreateWindowEx(
+	/*HWND hWnd = CreateWindowEx(
 		0,
 		className,
 		L"Fenetreux",
@@ -85,10 +91,12 @@ int CALLBACK WinMain(
 		nullptr,
 		nullptr,
 		hInstance,
-		nullptr);
+		nullptr);*/
+
+	Window w = Window(100, 100, L"Salut");
 
 	// 3.
-	ShowWindow(hWnd, SW_SHOW);
+	//ShowWindow(hWnd, SW_SHOW);
 
 	MSG message;
 	BOOL res;
