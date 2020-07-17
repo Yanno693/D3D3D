@@ -61,57 +61,33 @@ int CALLBACK WinMain(
 	LPSTR cmdLine,
 	int nCmdShow )
 {
-	// 1. Register window
+	try {
+		Window w = Window(640, 480, L"Salut");
 
-	//LPCWSTR className = L"D3D3D"; // ClassName
-	
-	//WNDCLASSEX wc = {0};
-	//wc.cbSize = sizeof(wc);
-	//wc.style = CS_OWNDC;
-	//wc.lpfnWndProc = winloop; // Window event loop
-	//wc.cbClsExtra = 0;
-	//wc.cbWndExtra = 0;
-	//wc.hInstance = hInstance;
-	//wc.hIcon = nullptr;
-	//wc.hIconSm = nullptr;
-	//wc.hCursor = nullptr;
-	//wc.hbrBackground = nullptr;
-	//wc.lpszMenuName = nullptr;
-	//wc.lpszClassName = className;
-	//RegisterClassEx(&wc);
-	//
-	// 2. Instantiate window
-	/*HWND hWnd = CreateWindowEx(
-		0,
-		className,
-		L"Fenetreux",
-		WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX,
-		200, 200,
-		640, 480,
-		nullptr,
-		nullptr,
-		hInstance,
-		nullptr);*/
+		MSG message;
+		BOOL res;
 
-	Window w = Window(100, 100, L"Salut");
+		while ((res = GetMessage(&message, nullptr, 0, 0)) > 0) {
+			TranslateMessage(&message);
+			DispatchMessageW(&message);
+		}
 
-	// 3.
-	//ShowWindow(hWnd, SW_SHOW);
-
-	MSG message;
-	BOOL res;
-
-	while ((res = GetMessage(&message, nullptr, 0, 0)) > 0) {
-		TranslateMessage(&message);
-		DispatchMessageW(&message);
-	}
-
-	if (res == -1) {
-		return -1;
-	}
-	else
-	{
+		if (res == -1)
+			return -1;
 		return message.wParam;
+	}
+
+	catch (const D3D3DException& e) {
+		MessageBeep(MB_OK);
+
+		wchar_t* buf1 = new wchar_t[4096];
+		wchar_t* buf2 = new wchar_t[4096];
+		MultiByteToWideChar(CP_ACP, 0, e.what(), -1, buf1, 4096);
+		MultiByteToWideChar(CP_ACP, 0, e.getType(), -1, buf2, 4096);
+		MessageBox(nullptr, buf1, buf2, MB_OK);
+	}
+	catch (const std::exception& e) {
+		MessageBox(nullptr, L"No details", L"Unknown exception", MB_OK);
 	}
 
 	return 0;

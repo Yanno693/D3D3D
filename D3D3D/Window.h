@@ -1,5 +1,6 @@
 #pragma once
 #include "Includes.h"
+#include "D3D3DException.h"
 
 class Window {
 private:
@@ -20,14 +21,26 @@ private:
 	};
 
 public:
+
+	class Exception : public D3D3DException {
+	public:
+		Exception(int _line, const char* _file, HRESULT _hResult);
+		const char* what() const noexcept override;
+		virtual const char* getType() const noexcept;
+		static std::string translateErrorCode(HRESULT _hResult) noexcept;
+		HRESULT getErrorCode() const noexcept;
+		std::string getErrorString() const noexcept;
+	private:
+		HRESULT hResult;
+	};
+
 	Window(int _w, int _h, const LPCWSTR _name) noexcept; // No except : Check at compil time if it can throw exeptions
 	~Window();
 
 	int w, h;
-	char* name;
 	HWND hWnd;
 
 	static LRESULT WINAPI winInit(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	static LRESULT WINAPI winLoop(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-	LRESULT CALLBACK HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+	LRESULT CALLBACK handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 };
