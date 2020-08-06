@@ -4,7 +4,7 @@ D3D3DException::D3D3DException(int _line, const char* _file) noexcept  : line(_l
 
 const char* D3D3DException::what() const noexcept {
 	std::ostringstream stream;
-	stream << getType() << std::endl << getOriginSgring();
+	stream << getType() << std::endl << getOriginString();
 	whatBuffer = stream.str();
 	return whatBuffer.c_str();
 }
@@ -21,7 +21,7 @@ const std::string& D3D3DException::getFile() const noexcept {
 	return file;
 }
 
-std::string D3D3DException::getOriginSgring() const noexcept {
+std::string D3D3DException::getOriginString() const noexcept {
 	std::ostringstream stream;
 	stream << "[File] " << file << std::endl << " [Line] " << line;
 	return stream.str();

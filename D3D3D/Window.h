@@ -1,6 +1,7 @@
 #pragma once
 #include "Includes.h"
 #include "D3D3DException.h"
+#include "Keyboard.h"
 
 class Window {
 private:
@@ -20,6 +21,9 @@ private:
 		HINSTANCE hInstance;
 	};
 
+	int w, h;
+	HWND hWnd;
+
 public:
 
 	class Exception : public D3D3DException {
@@ -34,13 +38,15 @@ public:
 		HRESULT hResult;
 	};
 
-	Window(int _w, int _h, const LPCWSTR _name) noexcept; // No except : Check at compil time if it can throw exeptions
+	Window(int _w, int _h, const LPCWSTR _name); // No except : Check at compil time if it can throw exeptions
 	~Window();
-
-	int w, h;
-	HWND hWnd;
 
 	static LRESULT WINAPI winInit(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	static LRESULT WINAPI winLoop(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	LRESULT CALLBACK handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+
+	Keyboard kb;
 };
+
+#define D3D3D_EXCEPT(hr) Window::Exception(__LINE__, __FILE__, hr)
+#define D3D3D_LAST() Window::Exception(__LINE__, __FILE__, GetLastError())

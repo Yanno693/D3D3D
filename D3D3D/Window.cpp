@@ -40,7 +40,7 @@ Window::Exception::Exception(int _line, const char* _file, HRESULT _hResult) : D
 
 const char *Window::Exception::what() const noexcept {
 	std::ostringstream stream;
-	stream << getType() << std::endl << " [Error Code] " << getErrorCode() << std::endl << " [Description] " << getErrorString() << std::endl;
+	stream << getType() << std::endl << " [Error Code] " << getErrorCode() << std::endl << " [Description] " << getErrorString() << std::endl << getOriginString();
 	whatBuffer = stream.str();
 	return whatBuffer.c_str();
 }
@@ -50,24 +50,30 @@ const char* Window::Exception::getType() const noexcept {
 }
 
 std::string Window::Exception::translateErrorCode(HRESULT _hResult) noexcept {
-	char* pMsgBuf = nullptr;
+
+	LPTSTR pMsgBuf;
 	// windows will allocate memory for err string and make our pointer point to it
 	const DWORD nMsgLen = FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		nullptr, _hResult, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		reinterpret_cast<LPWSTR>(&pMsgBuf), 0, nullptr
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		nullptr,
+		_hResult,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPTSTR)&pMsgBuf, 0, nullptr
 	);
+
+	//FormatMessage()
 	// 0 string length returned indicates a failure
 	if (nMsgLen == 0)
 	{
 		return "Unidentified error code";
 	}
 	// copy error string from windows-allocated buffer to std::string
-	std::string errorString = pMsgBuf;
+	std::wstring wst(pMsgBuf);
+	std::string errorString(wst.begin(), wst.end());
 	// free windows buffer
 	LocalFree(pMsgBuf);
 	return errorString;
+
 }
 
 HRESULT Window::Exception::getErrorCode() const noexcept {
@@ -113,53 +119,78 @@ LRESULT CALLBACK Window::handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
 	switch (msg) {
 	case WM_CLOSE:
 		PostQuitMessage(69);
+		return 0;
+	case WM_KILLFOCUS: // When focus of the window is lost, clear keystate
+		kb.ClearState();
 		break;
+	// KEYBOARD MESSAGE
 	case WM_KEYDOWN:
-		mstr[0] = LOWORD(wParam); // Get Char
-		OutputDebugString(L"Key Pressed : ");
-		OutputDebugString(mstr);
-		OutputDebugString(L"\n");
+	case WM_SYSKEYDOWN:
+		if (!(lParam & 0x40000000) || kb.AutorepeatIsEnabled()) {
+			kb.OnKeyPressed(static_cast<unsigned char>(wParam));
+		}
+
 		break;
-	case WM_LBUTTONDOWN: {
-		POINTS pts = MAKEPOINTS(lParam);
-		int xPos = pts.x;
-		int yPos = pts.y;
-		std::ostringstream ss;
-		ss << xPos << " " << yPos << std::endl;
-
-		wchar_t* buf = new wchar_t[4096];
-		MultiByteToWideChar(CP_ACP, 0, ss.str().c_str(), -1, buf, 4096);
-
-		OutputDebugString(L"Mouse: ");
-		OutputDebugString(buf);
-
-		delete[] buf;
+	case WM_KEYUP:
+	case WM_SYSKEYUP:
+		kb.OnKeyReleased(static_cast<unsigned char>(wParam));
 		break;
+	case WM_CHAR:
+		kb.OnChar(static_cast<unsigned char>(wParam));
+		break;
+	// END KEYBOARD MESSAGE
 	}
-	case WM_MOUSEMOVE: {
-		POINTS pts = MAKEPOINTS(lParam);
-		int xPos = pts.x;
-		int yPos = pts.y;
-		std::ostringstream ss;
-		ss << xPos << " " << yPos << std::endl;
 
-		wchar_t* buf = new wchar_t[4096];
-		MultiByteToWideChar(CP_ACP, 0, ss.str().c_str(), -1, buf, 4096);
+	//switch (msg) {
+	//case WM_CLOSE:
+	//	PostQuitMessage(69);
+	//	break;
+	//case WM_KEYDOWN:
+	//	mstr[0] = LOWORD(wParam); // Get Char
+	//	OutputDebugString(L"Key Pressed : ");
+	//	OutputDebugString(mstr);
+	//	OutputDebugString(L"\n");
+	//	break;
+	//case WM_LBUTTONDOWN: {
+	//	POINTS pts = MAKEPOINTS(lParam);
+	//	int xPos = pts.x;
+	//	int yPos = pts.y;
+	//	std::ostringstream ss;
+	//	ss << xPos << " " << yPos << std::endl;
 
-		OutputDebugString(L"Mouse: ");
-		OutputDebugString(buf);
+	//	wchar_t* buf = new wchar_t[4096];
+	//	MultiByteToWideChar(CP_ACP, 0, ss.str().c_str(), -1, buf, 4096);
 
-		delete[] buf;
-		break;
-	}
-	default:
-		break;
-	}
+	//	OutputDebugString(L"Mouse: ");
+	//	OutputDebugString(buf);
+
+	//	delete[] buf;
+	//	break;
+	//}
+	//case WM_MOUSEMOVE: {
+	//	POINTS pts = MAKEPOINTS(lParam);
+	//	int xPos = pts.x;
+	//	int yPos = pts.y;
+	//	std::ostringstream ss;
+	//	ss << xPos << " " << yPos << std::endl;
+
+	//	wchar_t* buf = new wchar_t[4096];
+	//	MultiByteToWideChar(CP_ACP, 0, ss.str().c_str(), -1, buf, 4096);
+
+	//	OutputDebugString(L"Mouse: ");
+	//	OutputDebugString(buf);
+
+	//	delete[] buf;
+	//	break;
+	//}
+	//default:
+	//	break;
+	//}
 
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
-Window::Window(int _w, int _h, const LPCWSTR _name) noexcept {
+Window::Window(int _w, int _h, const LPCWSTR _name) {
 	w = _w;
 	h = _h;
 
@@ -181,6 +212,12 @@ Window::Window(int _w, int _h, const LPCWSTR _name) noexcept {
 		nullptr,
 		WindowClass::getInstance(),
 		this);
+
+	if (hWnd == nullptr) {
+		throw D3D3D_LAST();
+	}
+
+	//throw D3D3D_EXCEPT(7);
 
 	ShowWindow(hWnd, SW_SHOW);
 }
