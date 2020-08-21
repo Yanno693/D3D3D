@@ -2,6 +2,7 @@
 #include "Includes.h"
 #include "D3D3DException.h"
 #include "Keyboard.h"
+#include "Mouse.h"
 
 class Window {
 private:
@@ -46,6 +47,7 @@ public:
 	LRESULT CALLBACK handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 
 	Keyboard kb;
+	Mouse mouse;
 };
 
 #define D3D3D_EXCEPT(hr) Window::Exception(__LINE__, __FILE__, hr)
