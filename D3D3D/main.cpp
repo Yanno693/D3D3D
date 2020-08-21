@@ -1,5 +1,6 @@
 #include <Windows.h>
-#include "Window.h"
+//#include "Window.h"
+#include "App.h"
 
 LRESULT CALLBACK winloopp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
@@ -55,41 +56,72 @@ LRESULT CALLBACK winloopp(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
+//int CALLBACK WinMain(
+//	HINSTANCE hInstance,
+//	HINSTANCE hPrevInstance,
+//	LPSTR cmdLine,
+//	int nCmdShow )
+//{
+//	try {
+//		Window w = Window(640, 480, L"Salut");
+//
+//		MSG message;
+//		BOOL res;
+//
+//		while ((res = GetMessage(&message, nullptr, 0, 0)) > 0) {
+//			TranslateMessage(&message);
+//			DispatchMessageW(&message);
+//
+//			if (w.kb.KeyIsPressed(VK_SPACE)) {
+//				MessageBox(nullptr, L"OOOOO", L"Space", MB_OK);
+//			}
+//		}
+//
+//		if (res == -1)
+//			return -1;
+//		return message.wParam;
+//	}
+//
+//	catch (const D3D3DException& e) {
+//		MessageBeep(MB_OK);
+//
+//		wchar_t* buf1 = new wchar_t[4096];
+//		wchar_t* buf2 = new wchar_t[4096];
+//		MultiByteToWideChar(CP_ACP, 0, e.what(), -1, buf1, 4096);
+//		MultiByteToWideChar(CP_ACP, 0, e.getType(), -1, buf2, 4096);
+//		MessageBox(nullptr, buf1, buf2, MB_OK);
+//
+//		delete[] buf1;
+//		delete[] buf2;
+//	}
+//	catch (const std::exception& e) {
+//		MessageBox(nullptr, L"No details", L"Unknown exception", MB_OK);
+//	}
+//	catch (...) {
+//		MessageBox(nullptr, L"No details", L"Unknown exception, but even worst", MB_OK);
+//	}
+//	return -1;
+//}
+
 int CALLBACK WinMain(
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
 	LPSTR cmdLine,
-	int nCmdShow )
+	int nCmdShow)
 {
 	try {
-		Window w = Window(640, 480, L"Salut");
-
-		MSG message;
-		BOOL res;
-
-		while ((res = GetMessage(&message, nullptr, 0, 0)) > 0) {
-			TranslateMessage(&message);
-			DispatchMessageW(&message);
-
-			if (w.kb.KeyIsPressed(VK_SPACE)) {
-				MessageBox(nullptr, L"OOOOO", L"Space", MB_OK);
-			}
-		}
-
-		if (res == -1)
-			return -1;
-		return message.wParam;
+		return App{}.run();
 	}
 
 	catch (const D3D3DException& e) {
 		MessageBeep(MB_OK);
-
+		
 		wchar_t* buf1 = new wchar_t[4096];
 		wchar_t* buf2 = new wchar_t[4096];
 		MultiByteToWideChar(CP_ACP, 0, e.what(), -1, buf1, 4096);
 		MultiByteToWideChar(CP_ACP, 0, e.getType(), -1, buf2, 4096);
 		MessageBox(nullptr, buf1, buf2, MB_OK);
-
+		
 		delete[] buf1;
 		delete[] buf2;
 	}

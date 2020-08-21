@@ -146,6 +146,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="App.cpp" />
     <ClCompile Include="D3D3DException.cpp" />
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="main.cpp" />
@@ -153,6 +154,7 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="App.h" />
     <ClInclude Include="D3D3DException.h" />
     <ClInclude Include="Includes.h" />
     <ClInclude Include="Keyboard.h" />

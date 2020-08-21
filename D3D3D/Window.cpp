@@ -28,7 +28,7 @@ Window::WindowClass::~WindowClass() {
 	UnregisterClass(wndClassName, getInstance());
 }
 
-LPCWSTR Window::WindowClass::getName() noexcept {
+LPCWSTR Window::WindowClass::getName() {
 	return wndClassName;
 }
 
@@ -255,11 +255,42 @@ Window::Window(int _w, int _h, const LPCWSTR _name) {
 		throw D3D3D_LAST();
 	}
 
-	//throw D3D3D_EXCEPT(7);
-
 	ShowWindow(hWnd, SW_SHOW);
 }
 
 Window::~Window() {
 	DestroyWindow(hWnd);
+}
+
+void Window::setTitle(const LPCWSTR& _name) {
+	HWND windowHandle = FindWindow(WindowClass::getName(), NULL);
+
+	//if (windowHandle != nullptr) {
+	//	OutputDebugString(L"WINDOW FOUND\n");
+	//}
+	//else {
+	//	OutputDebugString(L"WINDOW NOT FOUND\n");
+	//}
+
+	if (IsWindow(windowHandle) != 0) {
+		if (SetWindowTextW(windowHandle, _name) == 0)
+		{
+			throw D3D3D_LAST();
+		}
+	}
+}
+
+std::optional<int> Window::processMessages() {
+	MSG msg;
+
+	while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+		if (msg.message == WM_QUIT) {
+			return msg.wParam;
+		}
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	return {};
 }

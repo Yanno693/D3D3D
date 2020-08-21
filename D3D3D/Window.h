@@ -3,20 +3,21 @@
 #include "D3D3DException.h"
 #include "Keyboard.h"
 #include "Mouse.h"
+#include <optional>
 
 class Window {
 private:
+	
 	class WindowClass {
 	public:
 		//const char* getName();
-		static LPCWSTR getName() noexcept;
+		static LPCWSTR getName();
 		static HINSTANCE getInstance() noexcept;
 	private:
 		WindowClass() noexcept;
 		~WindowClass();
 		WindowClass(const WindowClass&) = delete;
 		WindowClass& operator=(const WindowClass&) = delete;
-		//const char* wndClassName = "D3D3D";
 		static constexpr LPCWSTR wndClassName = L"D3D3D";
 		static WindowClass windowClass; // Only one instance of window class
 		HINSTANCE hInstance;
@@ -45,6 +46,9 @@ public:
 	static LRESULT WINAPI winInit(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	static LRESULT WINAPI winLoop(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	LRESULT CALLBACK handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+
+	void setTitle(const LPCWSTR& _name);
+	static std::optional<int> processMessages();
 
 	Keyboard kb;
 	Mouse mouse;
