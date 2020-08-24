@@ -3,14 +3,15 @@
 #include "D3D3DException.h"
 #include "Keyboard.h"
 #include "Mouse.h"
+#include "Graphics.h"
 #include <optional>
+#include <memory>
 
 class Window {
 private:
 	
 	class WindowClass {
 	public:
-		//const char* getName();
 		static LPCWSTR getName();
 		static HINSTANCE getInstance() noexcept;
 	private:
@@ -49,9 +50,12 @@ public:
 
 	void setTitle(const LPCWSTR& _name);
 	static std::optional<int> processMessages();
+	Graphics& gfx();
 
 	Keyboard kb;
 	Mouse mouse;
+	//Graphics gfx;
+	std::unique_ptr<Graphics> gfx_ptr;
 };
 
 #define D3D3D_EXCEPT(hr) Window::Exception(__LINE__, __FILE__, hr)

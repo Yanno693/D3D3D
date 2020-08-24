@@ -126,9 +126,11 @@ int CALLBACK WinMain(
 		delete[] buf2;
 	}
 	catch (const std::exception& e) {
+		MessageBeep(MB_OK);
 		MessageBox(nullptr, L"No details", L"Unknown exception", MB_OK);
 	}
 	catch (...) {
+		MessageBeep(MB_OK);
 		MessageBox(nullptr, L"No details", L"Unknown exception, but even worst", MB_OK);
 	}
 	return -1;

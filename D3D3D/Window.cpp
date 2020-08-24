@@ -64,9 +64,7 @@ std::string Window::Exception::translateErrorCode(HRESULT _hResult) noexcept {
 	//FormatMessage()
 	// 0 string length returned indicates a failure
 	if (nMsgLen == 0)
-	{
 		return "Unidentified error code";
-	}
 	// copy error string from windows-allocated buffer to std::string
 	std::wstring wst(pMsgBuf);
 	std::string errorString(wst.begin(), wst.end());
@@ -213,7 +211,7 @@ LRESULT CALLBACK Window::handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
 	//	ss << xPos << " " << yPos << std::endl;
 
 	//	wchar_t* buf = new wchar_t[4096];
-	//	MultiByteToWideChar(CP_ACP, 0, ss.str().c_str(), -1, buf, 4096);
+	//  MultiByteToWideChar(CP_ACP, 0, ss.str().c_str(), -1, buf, 4096);
 
 	//	OutputDebugString(L"Mouse: ");
 	//	OutputDebugString(buf);
@@ -251,11 +249,12 @@ Window::Window(int _w, int _h, const LPCWSTR _name) {
 		WindowClass::getInstance(),
 		this);
 
-	if (hWnd == nullptr) {
+	if (hWnd == nullptr)
 		throw D3D3D_LAST();
-	}
 
 	ShowWindow(hWnd, SW_SHOW);
+
+	gfx_ptr = std::make_unique<Graphics>(hWnd);
 }
 
 Window::~Window() {
@@ -272,25 +271,25 @@ void Window::setTitle(const LPCWSTR& _name) {
 	//	OutputDebugString(L"WINDOW NOT FOUND\n");
 	//}
 
-	if (IsWindow(windowHandle) != 0) {
+	if (IsWindow(windowHandle) != 0)
 		if (SetWindowTextW(windowHandle, _name) == 0)
-		{
 			throw D3D3D_LAST();
-		}
-	}
 }
 
 std::optional<int> Window::processMessages() {
 	MSG msg;
 
 	while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
-		if (msg.message == WM_QUIT) {
+		if (msg.message == WM_QUIT)
 			return msg.wParam;
-		}
 
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
 
 	return {};
+}
+
+Graphics& Window::gfx() {
+	return *gfx_ptr;
 }
