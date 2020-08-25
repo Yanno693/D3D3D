@@ -2,7 +2,11 @@
 #include "Includes.h"
 #include "D3D3DException.h"
 #include <d3d11.h>
+#include <d3dcompiler.h>
 #include <wrl.h>
+
+#define GFX_THROW_FAILED(hrcall) if( FAILED( hr = (hrcall) ) ) throw Graphics::Exception( __LINE__,__FILE__,hr )
+#define GFX_DEVICE_REMOVED_EXCEPT(hr) Graphics::DeviceRemovedException( __LINE__,__FILE__,(hr) )
 
 class Graphics {
 public:
@@ -31,6 +35,8 @@ public:
 	//~Graphics() = default;
 	void endFrame();
 	void clearBuffer(float _r, float _g, float _b); // ClearBuffer color
+
+	void drawTestTriangle();
 
 	//ID3D11DeviceContext* deviceContext;
 	//ID3D11Device* device;
