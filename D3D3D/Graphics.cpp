@@ -128,12 +128,13 @@ void Graphics::drawTestTriangle() {
 
 	struct Vertex {
 		float x, y;
+		unsigned char r, g, b, a;
 	};
 
 	const Vertex vertices[] = {
-		{ 0.0f, 0.5f },
-		{ 0.5f, -0.5f },
-		{ -0.5f, -0.5f }
+		{ 0.0f, 0.5f , 255, 0, 0, 1},
+		{ 0.5f, -0.5f,  0, 255, 0, 1 },
+		{ -0.5f, -0.5f,  0, 0, 255, 1 }
 	};
 
 	D3D11_BUFFER_DESC desc = {};
@@ -158,7 +159,10 @@ void Graphics::drawTestTriangle() {
 		&offset
 	);
 
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	D3D11_PRIMITIVE_TOPOLOGY top = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	//D3D11_PRIMITIVE_TOPOLOGY top = D3D_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
+
+	deviceContext->IASetPrimitiveTopology(top);
 
 	// Input layer : link between our Vertex structure and the shader ... i guess ?
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayer_ptr;
@@ -167,6 +171,9 @@ void Graphics::drawTestTriangle() {
 		{
 			"Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0
 		},
+		{	/* 8 bytes offset, because position is 32 + 32 bit = 64 bit = 8 * 8bit = 8 bytes */
+			"Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 8u, D3D11_INPUT_PER_VERTEX_DATA, 0
+		}
 	};
 
 	
@@ -207,5 +214,5 @@ void Graphics::drawTestTriangle() {
 
 	deviceContext->RSSetViewports(1, &viewPort);
 
-	deviceContext->Draw(3, 0);
+	deviceContext->Draw(std::size(vertices), 0);
 }
