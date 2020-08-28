@@ -49,6 +49,6 @@ void App::frameLoop() {
 	float g = (float)(elapsedTime() % 800) / 800.f;
 
 	wnd.gfx().clearBuffer(r, g, 0);
-	wnd.gfx().drawTestTriangle();
+	wnd.gfx().drawTestTriangle((float)elapsedTime() / 1000.f);
 	wnd.gfx().endFrame();
 }

@@ -119,23 +119,111 @@ void Graphics::clearBuffer(float _r, float _g, float _b) {
 	deviceContext->ClearRenderTargetView(renderTarget.Get(), color);
 }
 
-void Graphics::drawTestTriangle() {
+void Graphics::drawTestTriangle(float time) {
 	// DIRECTX11 PIPELINE
 	// 1. Input Assembler : Set the vertices
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer_ptr;
 	HRESULT hr;
 
+	struct C_Shared { // Shared informations for the whole pixel shader
+		DirectX::XMMATRIX t; // mvpInv ... ?
+	};
+	 
+	struct ConstantStruct {
+		float a, b, c, d;
+	};
+
 	struct Vertex {
-		float x, y;
+		float x, y, z;
 		unsigned char r, g, b, a;
 	};
 
+	float recoil = 0.0f;
+
 	const Vertex vertices[] = {
-		{ 0.0f, 0.5f , 255, 0, 0, 1},
-		{ 0.5f, -0.5f,  0, 255, 0, 1 },
-		{ -0.5f, -0.5f,  0, 0, 255, 1 }
+		{ -1, 1 , recoil, 255, 0, 0, 1},
+		{ 1, 1, recoil, 0, 255, 0, 1 },
+		{ -1, -1, recoil, 0, 0, 255, 1 },
+		{ 1, -1, recoil, 255, 255, 0, 1 },
+
+
+		{ -1, -1, recoil, 0, 0, 255, 1 },
+		{ 1, 1, recoil, 0, 255, 0, 1 },
+		{ -1, 1 , recoil, 255, 0, 0, 1},
 	};
+
+	// VV
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> constantVertexBuffer_ptr;
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> constantMatrixBuffer_ptr;
+
+
+	ConstantStruct vv[] = {
+		{1.0f, 0.0, 0.0},
+		{0.0f, 0.0, 1.0}
+	};
+
+	DirectX::XMVECTOR eyePos = DirectX::XMVectorSet(0, 0, 5, 0);
+	DirectX::XMVECTOR direction = DirectX::XMVectorSet(0, 0, 1, 0);
+	DirectX::XMVECTOR up = DirectX::XMVectorSet(0, 1, 0, 0);
+
+	C_Shared matrices[] = {
+		//{DirectX::XMMatrixPerspectiveFovLH(1, 640.0f/480.0f, 1, 10)}
+		//{DirectX::XMMatrixLookToLH(eyePos, DirectX::XMVectorAdd(eyePos, direction), up)}
+		{
+			DirectX::XMMatrixTranspose(
+				DirectX::XMMatrixIdentity()
+				//* DirectX::XMMatrixRotationX(time)
+				* DirectX::XMMatrixRotationY(time)
+				//* DirectX::XMMatrixRotationZ(time)
+				//* DirectX::XMMatrixScaling(480.0f / 640.0f, 1.0f, 1.0f)
+				* DirectX::XMMatrixTranslation(0, 0, 5)
+				* DirectX::XMMatrixPerspectiveLH(1.0f, 480.0f / 640.0f, 0.5f, 10.0)
+
+				//* DirectX::XMMatrixLookToLH(eyePos, direction, up)
+				//DirectX::XMMatrixIdentity() *
+				//* DirectX::XMMatrixRotationY(time)
+			)
+		}
+		//{DirectX::XMMatrixTranslation(0.0f, 0.0f, 0)}
+		//{DirectX::XMMatrixTranslation(cos(time), sin(time), time / 10.f)}
+		//{DirectX::XMMatrixIdentity() }
+		 //{DirectX::XMMatrixRotationY(time)}
+	};
+
+	D3D11_BUFFER_DESC constantDesc = {};
+	constantDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constantDesc.Usage = D3D11_USAGE_DEFAULT;
+	constantDesc.CPUAccessFlags = 0;
+	constantDesc.MiscFlags = 0;
+	constantDesc.ByteWidth = sizeof(vv);
+	constantDesc.StructureByteStride = sizeof(ConstantStruct);
+
+	D3D11_BUFFER_DESC matrixDesc = {};
+	matrixDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	matrixDesc.Usage = D3D11_USAGE_DYNAMIC;
+	matrixDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	matrixDesc.MiscFlags = 0;
+	matrixDesc.ByteWidth = sizeof(matrices);
+	matrixDesc.StructureByteStride = sizeof(C_Shared);
+	//constantDesc.StructureByteStride = 0;
+
+	D3D11_SUBRESOURCE_DATA constantSubResourceData = {};
+	constantSubResourceData.pSysMem = vv;
+	
+	D3D11_SUBRESOURCE_DATA matrixSubResourceData = {};
+	matrixSubResourceData.pSysMem = matrices;
+
+	GFX_THROW_FAILED(device->CreateBuffer(&constantDesc, &constantSubResourceData, &constantVertexBuffer_ptr));
+	GFX_THROW_FAILED(device->CreateBuffer(&matrixDesc, &matrixSubResourceData, &constantMatrixBuffer_ptr));
+
+	deviceContext->PSSetConstantBuffers(0, 1, constantVertexBuffer_ptr.GetAddressOf());
+	deviceContext->PSSetConstantBuffers(1, 1, constantMatrixBuffer_ptr.GetAddressOf());
+	deviceContext->VSSetConstantBuffers(0, 1, constantMatrixBuffer_ptr.GetAddressOf());
+
+	// END VV
 
 	D3D11_BUFFER_DESC desc = {};
 	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER; // Kind of buffer
@@ -159,7 +247,7 @@ void Graphics::drawTestTriangle() {
 		&offset
 	);
 
-	D3D11_PRIMITIVE_TOPOLOGY top = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	D3D11_PRIMITIVE_TOPOLOGY top = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
 	//D3D11_PRIMITIVE_TOPOLOGY top = D3D_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
 
 	deviceContext->IASetPrimitiveTopology(top);
@@ -169,10 +257,10 @@ void Graphics::drawTestTriangle() {
 	const D3D11_INPUT_ELEMENT_DESC desc2[] = 
 	{
 		{
-			"Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0
+			"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0
 		},
 		{	/* 8 bytes offset, because position is 32 + 32 bit = 64 bit = 8 * 8bit = 8 bytes */
-			"Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 8u, D3D11_INPUT_PER_VERTEX_DATA, 0
+			"Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 12u, D3D11_INPUT_PER_VERTEX_DATA, 0
 		}
 	};
 
