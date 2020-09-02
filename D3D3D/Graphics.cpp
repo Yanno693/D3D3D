@@ -1,4 +1,5 @@
 #include "Graphics.h"
+#include <iostream>
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "D3DCompiler.lib")
@@ -139,21 +140,17 @@ void Graphics::drawTestTriangle(float time) {
 		unsigned char r, g, b, a;
 	};
 
-	float recoil = 0.0f;
+	float recoil = 1.5f;
 
 	const Vertex vertices[] = {
 		{ -1, 1 , recoil, 255, 0, 0, 1},
 		{ 1, 1, recoil, 0, 255, 0, 1 },
 		{ -1, -1, recoil, 0, 0, 255, 1 },
 		{ 1, -1, recoil, 255, 255, 0, 1 },
-
-
 		{ -1, -1, recoil, 0, 0, 255, 1 },
 		{ 1, 1, recoil, 0, 255, 0, 1 },
 		{ -1, 1 , recoil, 255, 0, 0, 1},
 	};
-
-	// VV
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> constantVertexBuffer_ptr;
 
@@ -169,28 +166,29 @@ void Graphics::drawTestTriangle(float time) {
 	DirectX::XMVECTOR direction = DirectX::XMVectorSet(0, 0, 1, 0);
 	DirectX::XMVECTOR up = DirectX::XMVectorSet(0, 1, 0, 0);
 
-	C_Shared matrices[] = {
-		//{DirectX::XMMatrixPerspectiveFovLH(1, 640.0f/480.0f, 1, 10)}
-		//{DirectX::XMMatrixLookToLH(eyePos, DirectX::XMVectorAdd(eyePos, direction), up)}
-		{
-			DirectX::XMMatrixTranspose(
-				DirectX::XMMatrixIdentity()
-				//* DirectX::XMMatrixRotationX(time)
-				* DirectX::XMMatrixRotationY(time)
-				//* DirectX::XMMatrixRotationZ(time)
-				//* DirectX::XMMatrixScaling(480.0f / 640.0f, 1.0f, 1.0f)
-				* DirectX::XMMatrixTranslation(0, 0, 5)
-				* DirectX::XMMatrixPerspectiveLH(1.0f, 480.0f / 640.0f, 0.5f, 10.0)
+	DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity()
+		//* DirectX::XMMatrixRotationX(time)
+		//* DirectX::XMMatrixTranslation(0, 0, -5)
+		//* DirectX::XMMatrixRotationY(time)
+		//* DirectX::XMMatrixTranslation(0.5f, 0, 0)
+		//* DirectX::XMMatrixRotationZ(time)
+		//* DirectX::XMMatrixScaling(480.0f / 640.0f, 1.0f, 1.0f)
+		//* DirectX::XMMatrixTranslation(0, 0, 5)
+		* DirectX::XMMatrixPerspectiveLH(1.0f, 480.0f / 640.0f, 0.5f, 10.0)
+		//* DirectX::XMMatrixPerspectiveLH()
+		//* DirectX::XMMatrixPerspectiveFovLH(0, 0.75, 1, 10)
 
-				//* DirectX::XMMatrixLookToLH(eyePos, direction, up)
-				//DirectX::XMMatrixIdentity() *
-				//* DirectX::XMMatrixRotationY(time)
-			)
-		}
-		//{DirectX::XMMatrixTranslation(0.0f, 0.0f, 0)}
-		//{DirectX::XMMatrixTranslation(cos(time), sin(time), time / 10.f)}
-		//{DirectX::XMMatrixIdentity() }
-		 //{DirectX::XMMatrixRotationY(time)}
+		//* DirectX::XMMatrixLookToLH(eyePos, direction, up)
+		//DirectX::XMMatrixIdentity() *
+		//* DirectX::XMMatrixRotationY(time)
+		;
+
+	DirectX::XMMATRIX inv = DirectX::XMMatrixInverse(nullptr, mat);
+
+	C_Shared matrices[] = {
+		DirectX::XMMatrixTranspose(inv),
+		DirectX::XMMatrixTranspose(mat)
+		//DirectX::XMMatrixTranspose(inv)
 	};
 
 	D3D11_BUFFER_DESC constantDesc = {};
@@ -222,7 +220,6 @@ void Graphics::drawTestTriangle(float time) {
 	deviceContext->PSSetConstantBuffers(0, 1, constantVertexBuffer_ptr.GetAddressOf());
 	deviceContext->PSSetConstantBuffers(1, 1, constantMatrixBuffer_ptr.GetAddressOf());
 	deviceContext->VSSetConstantBuffers(0, 1, constantMatrixBuffer_ptr.GetAddressOf());
-
 	// END VV
 
 	D3D11_BUFFER_DESC desc = {};
