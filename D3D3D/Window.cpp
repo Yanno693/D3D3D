@@ -254,7 +254,7 @@ Window::Window(int _w, int _h, const LPCWSTR _name) {
 
 	ShowWindow(hWnd, SW_SHOW);
 
-	gfx_ptr = std::make_unique<Graphics>(hWnd);
+	gfx_ptr = std::make_unique<Graphics>(hWnd, _w, _h);
 }
 
 Window::~Window() {

@@ -1,26 +1,20 @@
 #include <Windows.h>
 #include "App.h"
 
-App::App() : wnd(640, 480, L"Window Name") {
+App::App() : wnd(800, 600, L"D3D3D Project") {
+	
+	cameraPosition[0] = 0.0f;
+	cameraPosition[1] = 0.0f;
+	cameraPosition[2] = 0.0f;
+
+	cameraRotation[0] = 0.0f;
+	cameraRotation[1] = 0.0f;
+	cameraRotation[2] = 0.0f;
+
 	clock_start = std::chrono::system_clock::now();
 }
 
 int App::run() {
-	//MSG msg;
-	//BOOL gResult;
-
-	//while ((gResult = GetMessage(&msg, nullptr, 0, 0) > 0)) {
-	//	TranslateMessage(&msg);
-	//	DispatchMessage(&msg);
-	//	frameLoop();
-	//}
-
-	//if (gResult == -1) {
-	//	throw D3D3D_LAST();
-	//}
-
-	//return msg.wParam;
-
 	while (true) {
 		if (const auto ecode = Window::processMessages())
 			return *ecode;
@@ -39,16 +33,29 @@ int App::elapsedTime() {
 }
 
 void App::frameLoop() {
-	/*if (wnd.kb.KeyIsPressed('E')) {
-		wnd.setTitle(L"lol");
-	}*/
+	if (wnd.kb.KeyIsPressed(VK_UP))
+		cameraPosition[1] -= 0.1f;
+	
+	if (wnd.kb.KeyIsPressed(VK_DOWN))
+		cameraPosition[1] += 0.1f;
+
+	if (wnd.kb.KeyIsPressed(VK_RIGHT))
+		cameraPosition[0] -= 0.1f;
+
+	if (wnd.kb.KeyIsPressed(VK_LEFT))
+		cameraPosition[0] += 0.1f;
+
 
 	//time_t now = time(0);
 
 	float r = (float)(elapsedTime() % 500) / 500.f;
 	float g = (float)(elapsedTime() % 800) / 800.f;
 
-	wnd.gfx().clearBuffer(r, g, 0);
-	wnd.gfx().drawTestTriangle((float)elapsedTime() / 1000.f);
+	//wnd.gfx().clearBuffer(r, g, 0);
+	wnd.gfx().drawTestTriangle(
+		(float)elapsedTime() / 1000.f,
+		cameraPosition,
+		cameraRotation);
+
 	wnd.gfx().endFrame();
 }

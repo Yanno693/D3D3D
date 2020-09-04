@@ -1,20 +1,16 @@
-cbuffer cbMatrix : register(b0)
-{
-    float4x4 m[2];
-};
-
 struct VSOut
 {
 	float3 color : Color;
     float4 pos : SV_Position;
+    float2 screen_pos : C_Position;
 };
 
-VSOut main(float3 pos : Position, float3 col : Color)
+VSOut main(float2 pos : Position)
 {
     VSOut vsout;
-    //vsout.pos = float4(pos.xy, 0.0f, 1.1f);
-    vsout.pos = mul(float4(pos, 1.0f), m[1]);
-    vsout.color = col.xyz;
+    vsout.pos = float4(pos, 0.0f, 1.0f);
+    vsout.screen_pos = pos;
+    vsout.color = float3(0, 0, 0.1f);
 	
 	return vsout;
 }

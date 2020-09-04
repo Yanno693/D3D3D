@@ -1,10 +1,5 @@
 #define inf 100000.0f
 
-float2 conv(float2 _in)
-{
-    return float2(_in.x / 320.0f - 1.0f, _in.y / 240.0f - 1.0f);
-}
-
 float _triangle ( float3 o, float3 d, float3 a, float3 ab, float3 ac) {    
     float res = inf;
 
@@ -32,42 +27,30 @@ float _triangle ( float3 o, float3 d, float3 a, float3 ab, float3 ac) {
     return res;
 }
 
-struct ConstantStruct
-{
-    float a, b, c;
-};
-
-cbuffer cb : register(b0)
-{
-    ConstantStruct cs[2];
-};
-
 cbuffer cbMatrix : register(b1)
 {
-    float4x4 m[2];
+    float4x4 m;
+    int w;
+    int h;
+    //int h2;
+    //int h3;
 };
 
-float4 main(float3 color : Color, float4 pos : SV_Position) : SV_TARGET
+float4 main(float3 color : Color, float4 pos : SV_Position, float2 screen_pos : C_Position) : SV_TARGET
 {
-    float tdist = 20.0f;
+    float tdist = 5.0f;
     
     float3 triangleList[3];
-    triangleList[0] = float3(0, 1, tdist);
-    triangleList[1] = float3(-1, 0, tdist);
-    triangleList[2] = float3(1, 0, tdist);
+    triangleList[0] = float3(0.0f, 1.0f, tdist);
+    triangleList[1] = float3(-1.0f, 0.0f, tdist);
+    triangleList[2] = float3(1.0f, 0.0f, tdist);
     
     //return float4(1.0f, 1.0f, 0.0f, 1.0f);
-    
-    float rep = 0.0f;
-    
-    float2 npos = conv(pos.xy);
 
-    float4 o = mul(float4(npos, 0.f, 1), m[0]);
-    float4 e = mul(float4(npos, 1.f, 1), m[0]);
+    float4 o = mul(float4(screen_pos, 0.f, 1.0f), m);
+    float4 e = mul(float4(screen_pos, 1.f, 1.0f), m);
     float3 _o = o.xyz / o.w;
     float3 _e = e.xyz / e.w;
-    //float4 o = mul(m[0], float4(pos.xy, 0, 1));
-    //float4 e = mul(m[0], float4(pos.xy, 1, 1));
     
     float touche = _triangle(
         _o, 
@@ -82,14 +65,8 @@ float4 main(float3 color : Color, float4 pos : SV_Position) : SV_TARGET
     //float4 ret = float4(int(pos.y) % 2, int(pos.y) % 2, 0.0f, 1.0f);
     //float4 ret = float4(1, 1, 1, 1);
     
-    float2 mconv = conv(pos.xy);
-    //if(pos.x > 320.0f)
-        //ret.y = 1;
     
     if (touche != inf)
-    //if (_o.z == 0.0f)
-    //if (_e.z > 9.99f && _e.z < 10.01f)
-    //if (npos.y < 0.1f && npos.y > -0.1f)
         ret = 1;
     
     return ret;

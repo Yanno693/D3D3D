@@ -30,19 +30,14 @@ public:
 		virtual const char* getType() const noexcept;
 	};
 	
-	Graphics(HWND _hWnd);
+	Graphics(HWND _hWnd, int _w, int _h);
 	Graphics(const Graphics& g) = delete;
 	Graphics& operator=(const Graphics& g) = delete;
 	//~Graphics() = default;
 	void endFrame();
 	void clearBuffer(float _r, float _g, float _b); // ClearBuffer color
 
-	void drawTestTriangle(float time);
-
-	//ID3D11DeviceContext* deviceContext;
-	//ID3D11Device* device;
-	//IDXGISwapChain* swapChain;
-	//ID3D11RenderTargetView* renderTarget;
+	void drawTestTriangle(float time, float* cameraPosition, float* cameraRotation);
 
 	// ComPtr automatically release the resource, because COM = has to be released
 	// a bit like smart pointers
@@ -50,10 +45,46 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
 	Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTarget;
+	int w, h;
 
 	// Raytracing utilities
 
-	//float cameraPos[3]; // 3D caera position
-	//float cameraRot[3]; // 3D Camera rotation (in radius ... wait ... yes in rad, in radian)
-	//float ratio; // w/h
+	// 1. Inverse matrix transformation
+	struct C_Shared { // Shared informations for the whole pixel shader
+		struct {
+			DirectX::XMMATRIX t;
+		} transformation;
+	};
+
+	struct Vertex {
+		float x, y;
+	};
+	
+	C_Shared shared[1];
+
+	const Vertex vertices[4] = {
+		{ -1, 1},
+		{ 1, 1},
+		{ -1, -1},
+		{ 1, -1},
+	};
+
+	DirectX::XMMATRIX inverseTransformMatrix; // Trnsform for raycasting
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer_ptr; // Pass of constantes and matrices
+	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer_ptr; // Pass of the 4 vertices for rendering
+
+	D3D11_BUFFER_DESC consantDesc;
+	D3D11_SUBRESOURCE_DATA constantSubResourceData;
+
+	// Input layer : link between our Vertex structure and the shader ... i guess ?
+	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayer_ptr;
+	const D3D11_INPUT_ELEMENT_DESC inputLayerDesc[1] =
+	{
+		{
+			"Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0
+		}
+	};
+
+
 };

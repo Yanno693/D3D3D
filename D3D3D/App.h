@@ -13,6 +13,9 @@ private:
 
 	std::chrono::time_point<std::chrono::system_clock> clock_start;
 
+	float cameraPosition[3];
+	float cameraRotation[3];
+
 private:
 	Window wnd;
 };

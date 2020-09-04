@@ -57,7 +57,7 @@ std::string Graphics::Exception::getErrorString() const noexcept {
 	return translateErrorCode(hResult);
 }
 
-Graphics::Graphics(HWND _hWnd) : device(nullptr), deviceContext(nullptr), swapChain(nullptr) {
+Graphics::Graphics(HWND _hWnd, int _w, int _h) : device(nullptr), deviceContext(nullptr), swapChain(nullptr), w(_w), h(_h) {
 	DXGI_SWAP_CHAIN_DESC desc = {}; // SwapChain descriptor/configuration
 
 	// 0 is basically default, or "choose what is already there"
@@ -103,6 +103,40 @@ Graphics::Graphics(HWND _hWnd) : device(nullptr), deviceContext(nullptr), swapCh
 	Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer_ptr = nullptr;
 	GFX_THROW_FAILED( swapChain->GetBuffer(0, __uuidof(ID3D11Resource), &backBuffer_ptr));
 	GFX_THROW_FAILED( device->CreateRenderTargetView(backBuffer_ptr.Get(), nullptr, &renderTarget));
+
+	// direct3d Pipeline
+
+	consantDesc = {};
+	consantDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	consantDesc.Usage = D3D11_USAGE_DYNAMIC;
+	consantDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	consantDesc.MiscFlags = 0;
+	consantDesc.ByteWidth = sizeof(shared);
+	consantDesc.StructureByteStride = sizeof(C_Shared);
+	//constantDesc.StructureByteStride = 0;
+
+	constantSubResourceData.pSysMem = shared;
+
+	Microsoft::WRL::ComPtr<ID3DBlob> blob_ptr; // Read the file
+
+	// 3. Pixel Shader : set pixel shader
+
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader_ptr;
+	GFX_THROW_FAILED(D3DReadFileToBlob(L"PixelShader.cso", &blob_ptr));
+	GFX_THROW_FAILED(device->CreatePixelShader(blob_ptr->GetBufferPointer(), blob_ptr->GetBufferSize(), nullptr, &pixelShader_ptr)); // Read the file (we give its location + length) and load it in the pixel shader
+	deviceContext->PSSetShader(pixelShader_ptr.Get(), nullptr, 0);
+
+	// 2. Vertex Shader : Set vertex shader
+
+	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader_ptr; // Where we'll put the shader
+
+	GFX_THROW_FAILED(D3DReadFileToBlob(L"VertexShader.cso", &blob_ptr));
+	GFX_THROW_FAILED(device->CreateVertexShader(blob_ptr->GetBufferPointer(), blob_ptr->GetBufferSize(), nullptr, &vertexShader_ptr)); // Read the file (we give its location + length) and load it in the vertex shader
+	deviceContext->VSSetShader(vertexShader_ptr.Get(), nullptr, 0);
+
+	GFX_THROW_FAILED(device->CreateInputLayout(inputLayerDesc, (UINT)std::size(inputLayerDesc), blob_ptr->GetBufferPointer(), blob_ptr->GetBufferSize(), &inputLayer_ptr));
+	deviceContext->IASetInputLayout(inputLayer_ptr.Get());
+
 }
 
 void Graphics::endFrame() {
@@ -120,120 +154,49 @@ void Graphics::clearBuffer(float _r, float _g, float _b) {
 	deviceContext->ClearRenderTargetView(renderTarget.Get(), color);
 }
 
-void Graphics::drawTestTriangle(float time) {
+void Graphics::drawTestTriangle(float time, float* cameraPosition, float* cameraRotation) {
 	// DIRECTX11 PIPELINE
 	// 1. Input Assembler : Set the vertices
 
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer_ptr;
 	HRESULT hr;
 
-	struct C_Shared { // Shared informations for the whole pixel shader
-		DirectX::XMMATRIX t; // mvpInv ... ?
-	};
-	 
-	struct ConstantStruct {
-		float a, b, c, d;
-	};
-
-	struct Vertex {
-		float x, y, z;
-		unsigned char r, g, b, a;
-	};
-
-	float recoil = 1.5f;
-
-	const Vertex vertices[] = {
-		{ -1, 1 , recoil, 255, 0, 0, 1},
-		{ 1, 1, recoil, 0, 255, 0, 1 },
-		{ -1, -1, recoil, 0, 0, 255, 1 },
-		{ 1, -1, recoil, 255, 255, 0, 1 },
-		{ -1, -1, recoil, 0, 0, 255, 1 },
-		{ 1, 1, recoil, 0, 255, 0, 1 },
-		{ -1, 1 , recoil, 255, 0, 0, 1},
-	};
-
-	Microsoft::WRL::ComPtr<ID3D11Buffer> constantVertexBuffer_ptr;
-
-	Microsoft::WRL::ComPtr<ID3D11Buffer> constantMatrixBuffer_ptr;
-
-
-	ConstantStruct vv[] = {
-		{1.0f, 0.0, 0.0},
-		{0.0f, 0.0, 1.0}
-	};
-
-	DirectX::XMVECTOR eyePos = DirectX::XMVectorSet(0, 0, 5, 0);
-	DirectX::XMVECTOR direction = DirectX::XMVectorSet(0, 0, 1, 0);
-	DirectX::XMVECTOR up = DirectX::XMVectorSet(0, 1, 0, 0);
-
 	DirectX::XMMATRIX mat = DirectX::XMMatrixIdentity()
-		//* DirectX::XMMatrixRotationX(time)
-		//* DirectX::XMMatrixTranslation(0, 0, -5)
+		* DirectX::XMMatrixTranslation(cameraPosition[0], cameraPosition[2], cameraPosition[1])
+		* DirectX::XMMatrixRotationX(cameraRotation[0])
+		* DirectX::XMMatrixRotationY(cameraRotation[1])
+		* DirectX::XMMatrixRotationZ(cameraRotation[2])
 		//* DirectX::XMMatrixRotationY(time)
-		//* DirectX::XMMatrixTranslation(0.5f, 0, 0)
 		//* DirectX::XMMatrixRotationZ(time)
 		//* DirectX::XMMatrixScaling(480.0f / 640.0f, 1.0f, 1.0f)
 		//* DirectX::XMMatrixTranslation(0, 0, 5)
-		* DirectX::XMMatrixPerspectiveLH(1.0f, 480.0f / 640.0f, 0.5f, 10.0)
-		//* DirectX::XMMatrixPerspectiveLH()
-		//* DirectX::XMMatrixPerspectiveFovLH(0, 0.75, 1, 10)
+		* DirectX::XMMatrixPerspectiveLH(1.0f, (float)h / (float)w, 0.5f, 10.0)
 
 		//* DirectX::XMMatrixLookToLH(eyePos, direction, up)
 		//DirectX::XMMatrixIdentity() *
 		//* DirectX::XMMatrixRotationY(time)
 		;
 
-	DirectX::XMMATRIX inv = DirectX::XMMatrixInverse(nullptr, mat);
-
-	C_Shared matrices[] = {
-		DirectX::XMMatrixTranspose(inv),
-		DirectX::XMMatrixTranspose(mat)
-		//DirectX::XMMatrixTranspose(inv)
+	inverseTransformMatrix = DirectX::XMMatrixInverse(nullptr, mat);
+	shared[0] = {
+		DirectX::XMMatrixTranspose(inverseTransformMatrix)
 	};
 
-	D3D11_BUFFER_DESC constantDesc = {};
-	constantDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	constantDesc.Usage = D3D11_USAGE_DEFAULT;
-	constantDesc.CPUAccessFlags = 0;
-	constantDesc.MiscFlags = 0;
-	constantDesc.ByteWidth = sizeof(vv);
-	constantDesc.StructureByteStride = sizeof(ConstantStruct);
-
-	D3D11_BUFFER_DESC matrixDesc = {};
-	matrixDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	matrixDesc.Usage = D3D11_USAGE_DYNAMIC;
-	matrixDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	matrixDesc.MiscFlags = 0;
-	matrixDesc.ByteWidth = sizeof(matrices);
-	matrixDesc.StructureByteStride = sizeof(C_Shared);
-	//constantDesc.StructureByteStride = 0;
-
-	D3D11_SUBRESOURCE_DATA constantSubResourceData = {};
-	constantSubResourceData.pSysMem = vv;
-	
-	D3D11_SUBRESOURCE_DATA matrixSubResourceData = {};
-	matrixSubResourceData.pSysMem = matrices;
-
-	GFX_THROW_FAILED(device->CreateBuffer(&constantDesc, &constantSubResourceData, &constantVertexBuffer_ptr));
-	GFX_THROW_FAILED(device->CreateBuffer(&matrixDesc, &matrixSubResourceData, &constantMatrixBuffer_ptr));
-
-	deviceContext->PSSetConstantBuffers(0, 1, constantVertexBuffer_ptr.GetAddressOf());
-	deviceContext->PSSetConstantBuffers(1, 1, constantMatrixBuffer_ptr.GetAddressOf());
-	deviceContext->VSSetConstantBuffers(0, 1, constantMatrixBuffer_ptr.GetAddressOf());
+	GFX_THROW_FAILED(device->CreateBuffer(&consantDesc, &constantSubResourceData, &constantBuffer_ptr));
+	deviceContext->PSSetConstantBuffers(1, 1, constantBuffer_ptr.GetAddressOf());
 	// END VV
 
-	D3D11_BUFFER_DESC desc = {};
-	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER; // Kind of buffer
-	desc.Usage = D3D11_USAGE_DEFAULT; // Where to store data
-	desc.CPUAccessFlags = 0; // Can't be accessed by CPU
-	desc.MiscFlags = 0; // Don't care for now
-	desc.ByteWidth = sizeof(vertices); // Size of the whole data
-	desc.StructureByteStride = sizeof(Vertex); // Size of one data
+	D3D11_BUFFER_DESC vertexDesc = {};
+	vertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER; // Kind of buffer
+	vertexDesc.Usage = D3D11_USAGE_DEFAULT; // Where to store data
+	vertexDesc.CPUAccessFlags = 0; // Can't be accessed by CPU
+	vertexDesc.MiscFlags = 0; // Don't care for now
+	vertexDesc.ByteWidth = sizeof(vertices); // Size of the whole data
+	vertexDesc.StructureByteStride = sizeof(Vertex); // Size of one data
 
-	D3D11_SUBRESOURCE_DATA subResourceData = {}; // Data holder
-	subResourceData.pSysMem = vertices;
+	D3D11_SUBRESOURCE_DATA vertexSubResourceData = {}; // Data holder
+	vertexSubResourceData.pSysMem = vertices;
 
-	GFX_THROW_FAILED(device->CreateBuffer(&desc, &subResourceData, &vertexBuffer_ptr));
+	GFX_THROW_FAILED(device->CreateBuffer(&vertexDesc, &vertexSubResourceData, &vertexBuffer_ptr));
 	const UINT stride = sizeof(Vertex);
 	const UINT offset = 0;
 	deviceContext->IASetVertexBuffers(
@@ -245,42 +208,11 @@ void Graphics::drawTestTriangle(float time) {
 	);
 
 	D3D11_PRIMITIVE_TOPOLOGY top = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-	//D3D11_PRIMITIVE_TOPOLOGY top = D3D_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
 
 	deviceContext->IASetPrimitiveTopology(top);
 
 	// Input layer : link between our Vertex structure and the shader ... i guess ?
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayer_ptr;
-	const D3D11_INPUT_ELEMENT_DESC desc2[] = 
-	{
-		{
-			"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0
-		},
-		{	/* 8 bytes offset, because position is 32 + 32 bit = 64 bit = 8 * 8bit = 8 bytes */
-			"Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 12u, D3D11_INPUT_PER_VERTEX_DATA, 0
-		}
-	};
 
-	
-	Microsoft::WRL::ComPtr<ID3DBlob> blob_ptr; // Read the file
-
-	// 3. Pixel Shader : set pixel shader
-
-	Microsoft::WRL::ComPtr < ID3D11PixelShader> pixelShader_ptr;
-	GFX_THROW_FAILED(D3DReadFileToBlob(L"PixelShader.cso", &blob_ptr));
-	GFX_THROW_FAILED(device->CreatePixelShader(blob_ptr->GetBufferPointer(), blob_ptr->GetBufferSize(), nullptr, &pixelShader_ptr)); // Read the file (we give its location + length) and load it in the pixel shader
-	deviceContext->PSSetShader(pixelShader_ptr.Get(), nullptr, 0);
-
-	// 2. Vertex Shader : Set vertex shader
-	
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader_ptr; // Where we'll put the shader
-
-	GFX_THROW_FAILED(D3DReadFileToBlob(L"VertexShader.cso", &blob_ptr));
-	GFX_THROW_FAILED(device->CreateVertexShader(blob_ptr->GetBufferPointer(), blob_ptr->GetBufferSize(), nullptr, &vertexShader_ptr)); // Read the file (we give its location + length) and load it in the vertex shader
-	deviceContext->VSSetShader(vertexShader_ptr.Get(), nullptr, 0);
-
-	GFX_THROW_FAILED( device->CreateInputLayout(desc2, (UINT)std::size(desc2), blob_ptr->GetBufferPointer(), blob_ptr->GetBufferSize(), &inputLayer_ptr));
-	deviceContext->IASetInputLayout(inputLayer_ptr.Get());
 
 
 
@@ -290,8 +222,8 @@ void Graphics::drawTestTriangle(float time) {
 	// 6. Set viewport (rasterizer stage in pipeline)
 
 	D3D11_VIEWPORT viewPort;
-	viewPort.Width = 640;
-	viewPort.Height = 480;
+	viewPort.Width = w;
+	viewPort.Height = h;
 	viewPort.MinDepth = 0;
 	viewPort.MaxDepth = 1;
 	viewPort.TopLeftX = 0;
