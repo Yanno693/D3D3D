@@ -86,5 +86,8 @@ public:
 		}
 	};
 
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader_ptr;
+	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader_ptr;
+
 
 };

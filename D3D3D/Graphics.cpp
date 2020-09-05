@@ -183,6 +183,14 @@ void Graphics::drawTestTriangle(float time, float* cameraPosition, float* camera
 
 	GFX_THROW_FAILED(device->CreateBuffer(&consantDesc, &constantSubResourceData, &constantBuffer_ptr));
 	deviceContext->PSSetConstantBuffers(1, 1, constantBuffer_ptr.GetAddressOf());
+
+	//deviceContext->UpdateSubresource(
+	//	deviceContext->constantColor, 
+	//	0, 
+	//	nullptr, 
+	//	shared,
+	//	0,
+	//	0);
 	// END VV
 
 	D3D11_BUFFER_DESC vertexDesc = {};
