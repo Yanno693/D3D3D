@@ -52,7 +52,7 @@ void App::frameLoop() {
 	float g = (float)(elapsedTime() % 800) / 800.f;
 
 	//wnd.gfx().clearBuffer(r, g, 0);
-	wnd.gfx().drawTestTriangle(
+	wnd.gfx().draw(
 		(float)elapsedTime() / 1000.f,
 		cameraPosition,
 		cameraRotation);

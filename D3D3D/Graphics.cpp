@@ -108,14 +108,41 @@ Graphics::Graphics(HWND _hWnd, int _w, int _h) : device(nullptr), deviceContext(
 
 	consantDesc = {};
 	consantDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	consantDesc.Usage = D3D11_USAGE_DYNAMIC;
-	consantDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	consantDesc.Usage = D3D11_USAGE_DEFAULT;
+	consantDesc.CPUAccessFlags = 0;
 	consantDesc.MiscFlags = 0;
 	consantDesc.ByteWidth = sizeof(shared);
 	consantDesc.StructureByteStride = sizeof(C_Shared);
 	//constantDesc.StructureByteStride = 0;
 
 	constantSubResourceData.pSysMem = shared;
+
+	vertexDesc = {};
+	vertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER; // Kind of buffer
+	vertexDesc.Usage = D3D11_USAGE_DEFAULT; // Where to store data
+	vertexDesc.CPUAccessFlags = 0; // Can't be accessed by CPU
+	vertexDesc.MiscFlags = 0; // Don't care for now
+	vertexDesc.ByteWidth = sizeof(vertices); // Size of the whole data
+	vertexDesc.StructureByteStride = sizeof(Vertex); // Size of one data
+
+	vertexSubResourceData = {}; // Data holder
+	vertexSubResourceData.pSysMem = vertices;
+
+	GFX_THROW_FAILED(device->CreateBuffer(&vertexDesc, &vertexSubResourceData, &vertexBuffer_ptr));
+	const UINT stride = sizeof(Vertex);
+	const UINT offset = 0;
+	deviceContext->IASetVertexBuffers(
+		0,
+		1,
+		vertexBuffer_ptr.GetAddressOf(),
+		&stride,
+		&offset
+	);
+
+	GFX_THROW_FAILED(device->CreateBuffer(&consantDesc, &constantSubResourceData, &constantBuffer_ptr));
+	deviceContext->PSSetConstantBuffers(1, 1, constantBuffer_ptr.GetAddressOf());
+
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	Microsoft::WRL::ComPtr<ID3DBlob> blob_ptr; // Read the file
 
@@ -137,6 +164,15 @@ Graphics::Graphics(HWND _hWnd, int _w, int _h) : device(nullptr), deviceContext(
 	GFX_THROW_FAILED(device->CreateInputLayout(inputLayerDesc, (UINT)std::size(inputLayerDesc), blob_ptr->GetBufferPointer(), blob_ptr->GetBufferSize(), &inputLayer_ptr));
 	deviceContext->IASetInputLayout(inputLayer_ptr.Get());
 
+	// 6. Set viewport (rasterizer stage in pipeline)
+	// UPADTE IF WINDOW SIZE CHANGES
+	viewPort.Width = w;
+	viewPort.Height = h;
+	viewPort.MinDepth = 0;
+	viewPort.MaxDepth = 1;
+	viewPort.TopLeftX = 0;
+	viewPort.TopLeftY = 0;
+	deviceContext->RSSetViewports(1, &viewPort);
 }
 
 void Graphics::endFrame() {
@@ -154,7 +190,7 @@ void Graphics::clearBuffer(float _r, float _g, float _b) {
 	deviceContext->ClearRenderTargetView(renderTarget.Get(), color);
 }
 
-void Graphics::drawTestTriangle(float time, float* cameraPosition, float* cameraRotation) {
+void Graphics::draw(float time, float* cameraPosition, float* cameraRotation) {
 	// DIRECTX11 PIPELINE
 	// 1. Input Assembler : Set the vertices
 
@@ -181,63 +217,19 @@ void Graphics::drawTestTriangle(float time, float* cameraPosition, float* camera
 		DirectX::XMMatrixTranspose(inverseTransformMatrix)
 	};
 
-	GFX_THROW_FAILED(device->CreateBuffer(&consantDesc, &constantSubResourceData, &constantBuffer_ptr));
-	deviceContext->PSSetConstantBuffers(1, 1, constantBuffer_ptr.GetAddressOf());
-
-	//deviceContext->UpdateSubresource(
-	//	deviceContext->constantColor, 
-	//	0, 
-	//	nullptr, 
-	//	shared,
-	//	0,
-	//	0);
-	// END VV
-
-	D3D11_BUFFER_DESC vertexDesc = {};
-	vertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER; // Kind of buffer
-	vertexDesc.Usage = D3D11_USAGE_DEFAULT; // Where to store data
-	vertexDesc.CPUAccessFlags = 0; // Can't be accessed by CPU
-	vertexDesc.MiscFlags = 0; // Don't care for now
-	vertexDesc.ByteWidth = sizeof(vertices); // Size of the whole data
-	vertexDesc.StructureByteStride = sizeof(Vertex); // Size of one data
-
-	D3D11_SUBRESOURCE_DATA vertexSubResourceData = {}; // Data holder
-	vertexSubResourceData.pSysMem = vertices;
-
-	GFX_THROW_FAILED(device->CreateBuffer(&vertexDesc, &vertexSubResourceData, &vertexBuffer_ptr));
-	const UINT stride = sizeof(Vertex);
-	const UINT offset = 0;
-	deviceContext->IASetVertexBuffers(
+	// Update shared resources every frame
+	deviceContext->UpdateSubresource( 
+		constantBuffer_ptr.Get(),
+		0, 
+		nullptr, 
+		shared,
 		0,
-		1,
-		vertexBuffer_ptr.GetAddressOf(),
-		&stride,
-		&offset
-	);
+		0);
 
-	D3D11_PRIMITIVE_TOPOLOGY top = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-
-	deviceContext->IASetPrimitiveTopology(top);
-
-	// Input layer : link between our Vertex structure and the shader ... i guess ?
-
-
-
+	// END VV
 
 	// 4. Set Render Target : Where to render ?
 	deviceContext->OMSetRenderTargets(1, renderTarget.GetAddressOf(), nullptr);
-
-	// 6. Set viewport (rasterizer stage in pipeline)
-
-	D3D11_VIEWPORT viewPort;
-	viewPort.Width = w;
-	viewPort.Height = h;
-	viewPort.MinDepth = 0;
-	viewPort.MaxDepth = 1;
-	viewPort.TopLeftX = 0;
-	viewPort.TopLeftY = 0;
-
-	deviceContext->RSSetViewports(1, &viewPort);
 
 	deviceContext->Draw(std::size(vertices), 0);
 }

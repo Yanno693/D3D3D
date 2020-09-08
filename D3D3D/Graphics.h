@@ -37,7 +37,7 @@ public:
 	void endFrame();
 	void clearBuffer(float _r, float _g, float _b); // ClearBuffer color
 
-	void drawTestTriangle(float time, float* cameraPosition, float* cameraRotation);
+	void draw(float time, float* cameraPosition, float* cameraRotation);
 
 	// ComPtr automatically release the resource, because COM = has to be released
 	// a bit like smart pointers
@@ -47,7 +47,7 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTarget;
 	int w, h;
 
-	// Raytracing utilities
+	// Raycasting utilities
 
 	// 1. Inverse matrix transformation
 	struct C_Shared { // Shared informations for the whole pixel shader
@@ -77,6 +77,9 @@ public:
 	D3D11_BUFFER_DESC consantDesc;
 	D3D11_SUBRESOURCE_DATA constantSubResourceData;
 
+	D3D11_BUFFER_DESC vertexDesc;
+	D3D11_SUBRESOURCE_DATA vertexSubResourceData;
+
 	// Input layer : link between our Vertex structure and the shader ... i guess ?
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayer_ptr;
 	const D3D11_INPUT_ELEMENT_DESC inputLayerDesc[1] =
@@ -86,8 +89,9 @@ public:
 		}
 	};
 
+	// Shaders
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader_ptr;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader_ptr;
 
-
+	D3D11_VIEWPORT viewPort;
 };
