@@ -19,6 +19,8 @@ Clone the repository, locate the .sln file, open int with VS2019 and, compile an
 
 # Screenshots
 
+![Rendering triangles in buffer](Captures/capture1.png)
+
 ## Useful links
 
 - Learn to use DirectX 11 with [Chili Tomato Noodle](https://www.youtube.com/user/ChiliTomatoNoodle)
