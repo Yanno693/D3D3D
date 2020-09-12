@@ -5,6 +5,9 @@
 #include <d3dcompiler.h>
 #include <wrl.h>
 #include <DirectXMath.h>
+//#include <vector>
+#include <array>
+#include "TriangleBuffer.h"
 
 #define GFX_THROW_FAILED(hrcall) if( FAILED( hr = (hrcall) ) ) throw Graphics::Exception( __LINE__,__FILE__,hr )
 #define GFX_DEVICE_REMOVED_EXCEPT(hr) Graphics::DeviceRemovedException( __LINE__,__FILE__,(hr) )
@@ -54,6 +57,8 @@ public:
 		struct {
 			DirectX::XMMATRIX t;
 		} transformation;
+		unsigned int triangle_count;
+		//unsigned int shpere_count;
 	};
 
 	struct Vertex {
@@ -74,7 +79,7 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer_ptr; // Pass of constantes and matrices
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer_ptr; // Pass of the 4 vertices for rendering
 
-	D3D11_BUFFER_DESC consantDesc;
+	D3D11_BUFFER_DESC constantDesc;
 	D3D11_SUBRESOURCE_DATA constantSubResourceData;
 
 	D3D11_BUFFER_DESC vertexDesc;
@@ -94,4 +99,12 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader_ptr;
 
 	D3D11_VIEWPORT viewPort;
+
+	// Geometry
+
+	TriangleBuffer<300> triangles; // MUST EQUAL TRIANGLE_MAX IN PIXEL SHADER
+	unsigned int triangle_count = 0;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> triangleBuffer_ptr;
+	D3D11_BUFFER_DESC triangleDesc;
+	D3D11_SUBRESOURCE_DATA triangleSubResourceData;
 };

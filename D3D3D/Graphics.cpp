@@ -106,13 +106,13 @@ Graphics::Graphics(HWND _hWnd, int _w, int _h) : device(nullptr), deviceContext(
 
 	// direct3d Pipeline
 
-	consantDesc = {};
-	consantDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	consantDesc.Usage = D3D11_USAGE_DEFAULT;
-	consantDesc.CPUAccessFlags = 0;
-	consantDesc.MiscFlags = 0;
-	consantDesc.ByteWidth = sizeof(shared);
-	consantDesc.StructureByteStride = sizeof(C_Shared);
+	constantDesc = {};
+	constantDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constantDesc.Usage = D3D11_USAGE_DEFAULT;
+	constantDesc.CPUAccessFlags = 0;
+	constantDesc.MiscFlags = 0;
+	constantDesc.ByteWidth = sizeof(shared);
+	constantDesc.StructureByteStride = sizeof(C_Shared);
 	//constantDesc.StructureByteStride = 0;
 
 	constantSubResourceData.pSysMem = shared;
@@ -139,8 +139,40 @@ Graphics::Graphics(HWND _hWnd, int _w, int _h) : device(nullptr), deviceContext(
 		&offset
 	);
 
-	GFX_THROW_FAILED(device->CreateBuffer(&consantDesc, &constantSubResourceData, &constantBuffer_ptr));
-	deviceContext->PSSetConstantBuffers(1, 1, constantBuffer_ptr.GetAddressOf());
+	GFX_THROW_FAILED(device->CreateBuffer(&constantDesc, &constantSubResourceData, &constantBuffer_ptr));
+	deviceContext->PSSetConstantBuffers(0, 1, constantBuffer_ptr.GetAddressOf());
+
+	// Triangles things
+	triangles.a[0] = DirectX::XMFLOAT4(0, 0, 5, 0);
+	triangles.ab[0] = DirectX::XMFLOAT4(1, 0, 0, 0);
+	triangles.ac[0] = DirectX::XMFLOAT4(0, 1, 0, 0);
+	triangles.color[0] = DirectX::XMFLOAT4(1, 0, 1, 1);
+
+	triangles.a[1] = DirectX::XMFLOAT4(0, 1, 10, 0);
+	triangles.ab[1] = DirectX::XMFLOAT4(1, 0, 0, 0);
+	triangles.ac[1] = DirectX::XMFLOAT4(0, 1, 0, 0);
+	triangles.color[1] = DirectX::XMFLOAT4(0, 0, 1, 1);
+	//triangles.ab[1] = DirectX::XMFLOAT4(0.9, 0.1, 0.9, 0); // Purple
+	//triangles.ac[0] = DirectX::XMFLOAT4(0.9, 0.9, 0.1, 0); // Yellow
+	//triangles.ac[1] = DirectX::XMFLOAT4(0.9, 0.9, 0.9, 0); // Black
+
+	triangle_count++;
+	triangle_count++;
+
+	triangleDesc = {};
+	triangleDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER; // Kind of buffer
+	triangleDesc.Usage = D3D11_USAGE_DEFAULT; // Where to store data
+	triangleDesc.CPUAccessFlags = 0; // Can't be accessed by CPU
+	triangleDesc.MiscFlags = 0; // Don't care for now
+	triangleDesc.ByteWidth = sizeof(triangles) - sizeof(triangles.length); // Size of the whole data
+	triangleDesc.StructureByteStride = triangles.length; // Size of one data
+
+	triangleSubResourceData = {}; // Data holder for triangles
+	triangleSubResourceData.pSysMem = &triangles;
+
+	GFX_THROW_FAILED(device->CreateBuffer(&triangleDesc, &triangleSubResourceData, &triangleBuffer_ptr));
+	deviceContext->PSSetConstantBuffers(1, 1, triangleBuffer_ptr.GetAddressOf());
+	//
 
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
@@ -163,6 +195,9 @@ Graphics::Graphics(HWND _hWnd, int _w, int _h) : device(nullptr), deviceContext(
 
 	GFX_THROW_FAILED(device->CreateInputLayout(inputLayerDesc, (UINT)std::size(inputLayerDesc), blob_ptr->GetBufferPointer(), blob_ptr->GetBufferSize(), &inputLayer_ptr));
 	deviceContext->IASetInputLayout(inputLayer_ptr.Get());
+
+	D3D11_INPUT_ELEMENT_DESC d;
+	//d.
 
 	// 6. Set viewport (rasterizer stage in pipeline)
 	// UPADTE IF WINDOW SIZE CHANGES
@@ -214,7 +249,8 @@ void Graphics::draw(float time, float* cameraPosition, float* cameraRotation) {
 
 	inverseTransformMatrix = DirectX::XMMatrixInverse(nullptr, mat);
 	shared[0] = {
-		DirectX::XMMatrixTranspose(inverseTransformMatrix)
+		DirectX::XMMatrixTranspose(inverseTransformMatrix),
+		triangle_count
 	};
 
 	// Update shared resources every frame
@@ -225,6 +261,15 @@ void Graphics::draw(float time, float* cameraPosition, float* cameraRotation) {
 		shared,
 		0,
 		0);
+
+	// Later when updating trianglePosition
+	//deviceContext->UpdateSubresource(
+	//	triangleBuffer_ptr.Get(),
+	//	0,
+	//	nullptr,
+	//	&triangles,
+	//	0,
+	//	0);
 
 	// END VV
 

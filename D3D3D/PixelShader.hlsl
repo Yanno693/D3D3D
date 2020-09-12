@@ -1,4 +1,5 @@
 #define inf 100000.0f
+#define TRIANGLE_MAX 300
 
 float _triangle ( float3 o, float3 d, float3 a, float3 ab, float3 ac) {    
     float res = inf;
@@ -27,13 +28,19 @@ float _triangle ( float3 o, float3 d, float3 a, float3 ab, float3 ac) {
     return res;
 }
 
-cbuffer cbMatrix : register(b1)
+cbuffer cbShared : register(b0)
 {
     float4x4 m;
-    int w;
-    int h;
-    //int h2;
-    //int h3;
+    uint TRIANGLE_COUNT;
+    //uint SPHERE_COUNT;
+};
+
+cbuffer cbTriangle : register(b1)
+{
+    float3 a[TRIANGLE_MAX];
+    float3 ab[TRIANGLE_MAX];
+    float3 ac[TRIANGLE_MAX];
+    float4 t_color[TRIANGLE_MAX];
 };
 
 float4 main(float3 color : Color, float4 pos : SV_Position, float2 screen_pos : C_Position) : SV_TARGET
@@ -52,22 +59,25 @@ float4 main(float3 color : Color, float4 pos : SV_Position, float2 screen_pos : 
     float3 _o = o.xyz / o.w;
     float3 _e = e.xyz / e.w;
     
-    float touche = _triangle(
-        _o, 
-        normalize(_e - _o), 
-        triangleList[0], 
-        triangleList[2] - triangleList[0], 
-        triangleList[1] - triangleList[0]);
+    float4 ret;
+    float z_buffer = inf - 1;
     
-    //float4 ret = rep; 
-    float4 ret = float4(color, 1.0f);
-    //float4 ret = float4(pos.xy / 256.0f, 0.0f, 1.0f);
-    //float4 ret = float4(int(pos.y) % 2, int(pos.y) % 2, 0.0f, 1.0f);
-    //float4 ret = float4(1, 1, 1, 1);
+    for (int i = 0; i < TRIANGLE_COUNT; i++) {
+        float touche = _triangle(
+        _o,
+        normalize(_e - _o),
+        a[i], //triangleList[0], 
+        ab[i], //triangleList[2] - triangleList[0],
+        ac[i] //triangleList[1] - triangleList[0]
+        );
+        
+        if (z_buffer > touche) {
+            z_buffer = touche;
+            ret = t_color[i];
+        } 
+    }
     
     
-    if (touche != inf)
-        ret = 1;
-    
+    //return float4(ab[0].xyz,1);
     return ret;
 }
