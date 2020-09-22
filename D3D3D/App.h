@@ -1,6 +1,7 @@
 #pragma once
 #include "Window.h"
 #include <chrono>
+#include "Mesh.h"
 
 class App {
 public:
@@ -18,4 +19,6 @@ private:
 
 private:
 	Window wnd;
+
+	Mesh m;
 };

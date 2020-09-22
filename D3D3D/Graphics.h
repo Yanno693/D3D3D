@@ -5,8 +5,7 @@
 #include <d3dcompiler.h>
 #include <wrl.h>
 #include <DirectXMath.h>
-//#include <vector>
-#include <array>
+
 #include "TriangleBuffer.h"
 
 #define GFX_THROW_FAILED(hrcall) if( FAILED( hr = (hrcall) ) ) throw Graphics::Exception( __LINE__,__FILE__,hr )
@@ -107,4 +106,6 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> triangleBuffer_ptr;
 	D3D11_BUFFER_DESC triangleDesc;
 	D3D11_SUBRESOURCE_DATA triangleSubResourceData;
+
+	void updateTriangles();
 };

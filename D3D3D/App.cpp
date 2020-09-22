@@ -12,9 +12,13 @@ App::App() : wnd(800, 600, L"D3D3D Project") {
 	cameraRotation[2] = 0.0f;
 
 	clock_start = std::chrono::system_clock::now();
+
+	m.load_mesh_obj("thing.obj");
 }
 
 int App::run() {
+	m.bind(wnd.gfx());
+
 	while (true) {
 		if (const auto ecode = Window::processMessages())
 			return *ecode;
@@ -45,6 +49,25 @@ void App::frameLoop() {
 	if (wnd.kb.KeyIsPressed(VK_LEFT))
 		cameraPosition[0] += 0.1f;
 
+	if (wnd.kb.KeyIsPressed(VK_SHIFT))
+		cameraPosition[2] -= 0.1f;
+
+	if (wnd.kb.KeyIsPressed(VK_CONTROL))
+		cameraPosition[2] += 0.1f;
+
+
+
+	if (wnd.kb.KeyIsPressed('Z'))
+		cameraRotation[0] += 0.01f;
+
+	if (wnd.kb.KeyIsPressed('S'))
+		cameraRotation[0] -= 0.01f;
+
+	if (wnd.kb.KeyIsPressed('Q'))
+		cameraRotation[1] += 0.01f;
+
+	if (wnd.kb.KeyIsPressed('D'))
+		cameraRotation[1] -= 0.01f;
 
 	//time_t now = time(0);
 

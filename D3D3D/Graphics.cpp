@@ -142,22 +142,37 @@ Graphics::Graphics(HWND _hWnd, int _w, int _h) : device(nullptr), deviceContext(
 	GFX_THROW_FAILED(device->CreateBuffer(&constantDesc, &constantSubResourceData, &constantBuffer_ptr));
 	deviceContext->PSSetConstantBuffers(0, 1, constantBuffer_ptr.GetAddressOf());
 
+	triangles.triangles_points.reserve(triangles.length);
+	
 	// Triangles things
-	triangles.a[0] = DirectX::XMFLOAT4(0, 0, 5, 0);
-	triangles.ab[0] = DirectX::XMFLOAT4(1, 0, 0, 0);
-	triangles.ac[0] = DirectX::XMFLOAT4(0, 1, 0, 0);
-	triangles.color[0] = DirectX::XMFLOAT4(1, 0, 1, 1);
 
-	triangles.a[1] = DirectX::XMFLOAT4(0, 1, 10, 0);
-	triangles.ab[1] = DirectX::XMFLOAT4(1, 0, 0, 0);
-	triangles.ac[1] = DirectX::XMFLOAT4(0, 1, 0, 0);
-	triangles.color[1] = DirectX::XMFLOAT4(0, 0, 1, 1);
+	triangles.triangles_points.push_back(0);
+	triangles.triangles_points.push_back(0);
+	triangles.triangles_points.push_back(5);
+
+	triangles.triangles_points.push_back(1);
+	triangles.triangles_points.push_back(0);
+	triangles.triangles_points.push_back(0);
+
+	triangles.triangles_points.push_back(0);
+	triangles.triangles_points.push_back(1);
+	triangles.triangles_points.push_back(0);
+	triangles.color[0] = DirectX::XMFLOAT4(1, 0, 1, 1);
+	triangle_count++;
+
+	//triangles.a[0] = DirectX::XMFLOAT4(0, 0, 5, 0);
+	//triangles.ab[0] = DirectX::XMFLOAT4(1, 0, 0, 0);
+	//triangles.ac[0] = DirectX::XMFLOAT4(0, 1, 0, 0);
+
+	//triangles.a[1] = DirectX::XMFLOAT4(0, 1, 10, 0);
+	//triangles.ab[1] = DirectX::XMFLOAT4(1, 0, 0, 0);
+	//triangles.ac[1] = DirectX::XMFLOAT4(0, 1, 0, 0);
+	//triangles.color[1] = DirectX::XMFLOAT4(0, 0, 1, 1);
 	//triangles.ab[1] = DirectX::XMFLOAT4(0.9, 0.1, 0.9, 0); // Purple
 	//triangles.ac[0] = DirectX::XMFLOAT4(0.9, 0.9, 0.1, 0); // Yellow
 	//triangles.ac[1] = DirectX::XMFLOAT4(0.9, 0.9, 0.9, 0); // Black
 
-	triangle_count++;
-	triangle_count++;
+	//triangle_count++;
 
 	triangleDesc = {};
 	triangleDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER; // Kind of buffer
@@ -225,9 +240,37 @@ void Graphics::clearBuffer(float _r, float _g, float _b) {
 	deviceContext->ClearRenderTargetView(renderTarget.Get(), color);
 }
 
+void Graphics::updateTriangles() {
+	for (int i = 0; i < triangle_count; i++) {
+		int offset = 9 * i;
+
+		triangles.a[i] = DirectX::XMFLOAT4(
+			triangles.triangles_points[offset],
+			triangles.triangles_points[offset + 1],
+			triangles.triangles_points[offset + 2],
+			0);
+
+		triangles.ab[i] = DirectX::XMFLOAT4(
+			triangles.triangles_points[offset + 3],
+			triangles.triangles_points[offset + 4],
+			triangles.triangles_points[offset + 5], 
+			0);
+
+		triangles.ac[i] = DirectX::XMFLOAT4(
+			triangles.triangles_points[offset + 6],
+			triangles.triangles_points[offset + 7],
+			triangles.triangles_points[offset + 8],
+			0);
+
+		//triangles.color[i] = DirectX::XMFLOAT4(0, 1, 1, 0);			//triangles.a[1] = DirectX::XMFLOAT4(0, 1, 10, 0);
+	}
+}
+
 void Graphics::draw(float time, float* cameraPosition, float* cameraRotation) {
 	// DIRECTX11 PIPELINE
 	// 1. Input Assembler : Set the vertices
+
+	updateTriangles();
 
 	HRESULT hr;
 
@@ -263,13 +306,13 @@ void Graphics::draw(float time, float* cameraPosition, float* cameraRotation) {
 		0);
 
 	// Later when updating trianglePosition
-	//deviceContext->UpdateSubresource(
-	//	triangleBuffer_ptr.Get(),
-	//	0,
-	//	nullptr,
-	//	&triangles,
-	//	0,
-	//	0);
+	deviceContext->UpdateSubresource(
+		triangleBuffer_ptr.Get(),
+		0,
+		nullptr,
+		&triangles,
+		0,
+		0);
 
 	// END VV
 
