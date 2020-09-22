@@ -10,12 +10,12 @@ The whole geometry of the scene is stored in Constant Buffers and sent to the Pi
 
 ## Prerequisites
 
-- Visual Studio 2019
+- Visual Studio 2019 with C++ development kit
 - A DirectX 11 compatible graphic card
 
 ### How to install
 
-Clone the repository, locate the .sln file, open int with VS2019 and, compile and run.
+Clone the repository, locate the .sln file, open it with VS2019, compile and run.
 
 # Screenshots
 
