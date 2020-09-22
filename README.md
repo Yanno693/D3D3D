@@ -20,7 +20,7 @@ Clone the repository, locate the .sln file, open it with VS2019, compile and run
 # Screenshots
 
 ![Rendering triangles in buffer](Captures/capture1.png)
-![Mesh loading](Captures/capture1.png)
+![Mesh loading](Captures/capture2.png)
 
 ## Useful links
 
