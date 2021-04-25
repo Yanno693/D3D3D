@@ -2,6 +2,7 @@
 #include <iostream>
 
 #pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "D3DCompiler.lib")
 // Basically some dark magic
 
@@ -83,10 +84,31 @@ Graphics::Graphics(HWND _hWnd, int _w, int _h) : device(nullptr), deviceContext(
 
 	HRESULT hr;
 
+	Microsoft::WRL::ComPtr<IDXGIFactory> factory = nullptr;
+	CreateDXGIFactory(IID_PPV_ARGS(factory.GetAddressOf()));
+
+	Microsoft::WRL::ComPtr<IDXGIAdapter> adapterIteratod = nullptr;
+	Microsoft::WRL::ComPtr<IDXGIAdapter> adapted = nullptr;
+	UINT mem = 0;
+
+	for (UINT i = 0; factory.Get()->EnumAdapters(i, adapterIteratod.GetAddressOf()) != DXGI_ERROR_NOT_FOUND; ++i) {
+		DXGI_ADAPTER_DESC adapterDesc = {};
+		adapterIteratod.Get()->GetDesc(&adapterDesc);
+
+		if (mem <= adapterDesc.DedicatedVideoMemory) {
+			mem = adapterDesc.DedicatedVideoMemory;
+			adapted = adapterIteratod;
+		}
+	}
+
+	//ID3D11
+
+	//Microsoft::WRL::ComPtr<
+
 	GFX_THROW_FAILED(
 		D3D11CreateDeviceAndSwapChain(
-			nullptr,
-			D3D_DRIVER_TYPE_HARDWARE,
+			adapted.Get(),
+			D3D_DRIVER_TYPE_UNKNOWN,
 			nullptr,
 			D3D11_CREATE_DEVICE_DEBUG, // to change for release mode
 			nullptr,
